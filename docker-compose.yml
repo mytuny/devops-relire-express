@@ -1,0 +1,73 @@
+version: "3"
+
+services:
+
+  # PHP service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laravel
+    container_name: api.relire.express_app
+    depends_on:
+      - db
+    restart: always
+    tty: true
+    ports:
+      - 9000
+    links:
+      - web
+    working_dir: /var/www
+    volumes:
+      - ./api:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - relire_express
+
+  # Nginx Service
+  web:
+    image: nginx:alpine
+    container_name: api.relire.express_web
+    restart: always
+    ports:
+      - 80
+    environment:
+      VIRTUAL_HOST: api.relire.express
+      LETSENCRYPT_HOST: api.relire.express
+      LETSENCRYPT_EMAIL: mytuny@outlook.com
+    volumes:
+      - ./api:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - default
+      - relire_express
+
+  # Mysql Service
+  db:
+    image: mysql:5.7
+    container_name: api.relire.express_db
+    restart: always
+    ports:
+      - 3306
+    environment:
+      MYSQL_DATABASE: relire.express
+      MYSQL_ROOT_PASSWORD: relireexpressjuly2019
+      MYSQL_USER: relire.express
+      MYSQL_PASSWORD: relireexpressjuly2019
+    volumes:
+      - relire_express_mysql:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - relire_express
+
+# Volumes
+volumes:
+  relire_express_mysql:
+
+# Docker Networks
+networks:
+  relire_express:
+    driver: bridge
+  default:
+    external:
+      name: nginx-proxy
